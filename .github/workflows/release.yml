@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Ruby version must satisfy the dev lockfile's toolchain (rubocop's
+      # deps require >= 3.3). AS-runtime compatibility of the SHIPPED gems is
+      # guaranteed separately: only jsonpath + multi_json are vendored into
+      # the zip, and the Gemfile pins them to pure-Ruby versions that run on
+      # every Ruby AS ships.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rspec
+
+      - name: Run lint
+        run: bundle exec rubocop
+
+      - name: Build release zip
+        run: scripts/build_release.sh
+
+      - name: Verify zip contains no dev files
+        run: |
+          listing="$(unzip -l dist/*.zip)"
+          for forbidden in Gemfile spec/ .rubocop.yml README.md; do
+            if echo "$listing" | grep -q "aeon_data_handler/$forbidden"; then
+              echo "ERROR: $forbidden leaked into the release zip" >&2
+              exit 1
+            fi
+          done
+          echo "$listing" | grep -q "aeon_data_handler/vendor/bundle/ruby/.*/gems/jsonpath" \
+            || { echo "ERROR: vendored jsonpath missing from zip" >&2; exit 1; }
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes

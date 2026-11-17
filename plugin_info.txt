@@ -1,0 +1,5 @@
+{
+  "name": "aeon_data_handler",
+  "version": "2.1.0",
+  "description": "Backend API plugin providing ArchivesSpace record data mapped to Aeon field names. Consolidates field mappings for use by Aeon Client addon, Web Client addon, Server Addons, and patron pages."
+}

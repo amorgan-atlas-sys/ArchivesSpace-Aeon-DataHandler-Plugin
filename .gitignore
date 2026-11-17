@@ -1,0 +1,10 @@
+.DS_Store
+
+# Bundler — vendor/bundle is locally generated for dev/test and not committed.
+# Production deploys re-run `bundle install --path vendor/bundle` against this
+# plugin's Gemfile before copying into AS plugins/. See README.md.
+.bundle/
+vendor/bundle/
+
+# Release zips built by scripts/build_release.sh
+dist/

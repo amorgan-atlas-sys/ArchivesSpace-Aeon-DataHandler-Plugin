@@ -1,0 +1,275 @@
+# =============================================================================
+# Aeon Default Field Mappings
+# =============================================================================
+#
+# WARNING: Do NOT modify this file directly. These are the default mappings
+# shipped with the plugin. They will be overwritten on plugin updates.
+#
+# The setup script (migrations/001_create_aeon_mapping_tables.rb) reads this
+# file once, to seed the default rules into the database. After that, the
+# plugin reads only the database, so editing this file on a running install
+# changes nothing. To customize mappings, use the ArchivesSpace staff
+# interface: Plug-ins -> Aeon Mapping. The old AppConfig field_overrides are
+# no longer supported (see docs/MIGRATION.md).
+# =============================================================================
+
+# Max lengths for stock Aeon Transactions columns (from aeoncreatetables.sql).
+# Any seeded rule whose TARGET field appears here gets a max_length
+# transformation option; CustomFields.* and placeholder targets get 255 (the
+# custom-field Short/LongText limit). The engine truncates rule output to max_length,
+# ending it in "...", because Aeon's client-side SetFieldValue does not truncate over-long
+# values — the field simply fails to be set. Editable per rule in the staff
+# UI. A rule with a BLANK max_length falls back to these same lengths at
+# runtime by target field name (keep this table in sync with
+# AeonMappingEngine::STOCK_AEON_FIELD_MAX_LENGTHS); targets not listed here
+# stay unlimited.
+aeon_field_max_lengths:
+  ItemTitle: 255
+  ItemSubtitle: 255
+  ItemAuthor: 255
+  ItemDate: 50
+  ItemVolume: 255
+  ItemIssue: 255
+  ItemCitation: 255
+  EADNumber: 255
+  ItemNumber: 50
+  CallNumber: 255
+  Location: 255
+  ReferenceNumber: 50
+  AccessRestrictions: 255
+
+# System-level fields (populated from AppConfig and ArchivesSpace settings)
+system_fields:
+  system_id: SystemID                       # External system identifier
+  return_link_url: ReturnLinkURL            # URL back to the record in ArchivesSpace
+  return_link_system_name: ReturnLinkSystemName  # Display name for the return link
+  site: Site                                # Aeon site code
+
+# Common record fields (archival objects, resources, accessions)
+record_fields:
+  # NOTE: `title` is deliberately NOT seeded here — its Aeon target differs by
+  # record type to match the released client addon: archival objects put the
+  # parent resource's title in ItemTitle and their own title in ItemSubtitle;
+  # resources/accessions/digital objects put their own title in ItemTitle.
+  # See the per-record-type sections below.
+  identifier: "[Aeon custom field placeholder]"                    # Record identifier
+  # NOTE: `collection_id` is deliberately NOT seeded here — accessions map
+  # their OWN identifier to CallNumber,
+  # so CallNumber is seeded per record type below.
+  collection_title: "[Aeon custom field placeholder]"        # Parent resource title
+  # NOTE: `creators` is deliberately NOT seeded here — its ItemAuthor source
+  # differs by record type to match the released client addon: archival
+  # objects show the PARENT RESOURCE's creators in the grid (the pre-plugin
+  # addon read the collection record), while resources and accessions show
+  # their own.
+  # See the per-record-type sections below.
+  creation_date: ItemDate                   # Creation-labeled dates: expression, else begin/end
+  language: "[Aeon custom field placeholder]"                        # Language code(s) (semicolon-separated)
+  level: "[Aeon custom field placeholder]"                              # Archival record level
+  staff_url: ItemCitation                   # Full staff-interface link
+  publish: "[Aeon custom field placeholder]"                          # Publish status
+  display_string: "[Aeon custom field placeholder]"            # Display string
+  # restrictions_apply is NOT seeded here. The archival object CITATION set
+  # seeds it; everywhere else it stays
+  # available for staff to map in the UI. The extractor carries the value
+  # logic (AO ancestor cascade, resource/DO `restrictions` boolean).
+  rights_type: "[Aeon custom field placeholder]"                  # Rights statement types
+  digital_objects: "[Aeon custom field placeholder]"          # Digital object references
+  repo_code: "[Aeon custom field placeholder]"                      # Repository code
+  repo_name: "[Aeon custom field placeholder]"                      # Repository name
+
+# Note fields (extracted from the record's notes array).
+# Seeded for ARCHIVAL OBJECTS and RESOURCES only — accessions have no notes
+# array in ArchivesSpace; their restriction text lives in direct fields
+# (see accession_fields below).
+note_fields:
+  accessrestrict: AccessRestrictions        # Access restriction notes (published subnotes)
+  # NOTE: `userestrict` is deliberately NOT seeded — UseRestrictions is not a
+  # stock Aeon Transactions column, and custom fields are never seeded as
+  # defaults unless specifically requested (Conditions Governing Use maps to
+  # a site-configured custom field, with no default). The extractor
+  # stays available for staff to map in the UI.
+  # NOTE: `physical_location_note` is likewise NOT seeded — PhysicalLocation
+  # is not an Aeon Transactions column either. The extractor stays available.
+
+# Instance/container fields (per-instance in the instances array)
+instance_fields:
+  instance_type: "[Aeon custom field placeholder]"
+  is_representative: "[Aeon custom field placeholder]"
+  top_container_uri: CustomFields.TopContainerURI   # Commonly-implemented Aeon custom field
+  top_container_type: "[Aeon custom field placeholder]"
+  top_container_indicator: "[Aeon custom field placeholder]"
+  # NOTE: top_container_barcode and top_container_long_display_string are
+  # seeded via instance_conditional_fields below (ItemNumber / ItemVolume),
+  # so digital-object instances can fall back into the same Aeon fields.
+  top_container_restricted: "[Aeon custom field placeholder]"
+  top_container_display_string: "[Aeon custom field placeholder]"
+  top_container_internal_note: "[Aeon custom field placeholder]"  # ASpace 3.4+ (client addons cannot write Aeon Notes)
+  digital_object_uri: "[Aeon custom field placeholder]"            # URI of a digital-object instance's DO
+  sub_container_label: ItemIssue            # Child container, e.g. "Folder 3"
+  sub_container_type_2: "[Aeon custom field placeholder]"
+  sub_container_indicator_2: "[Aeon custom field placeholder]"
+  sub_container_type_3: "[Aeon custom field placeholder]"
+  sub_container_indicator_3: "[Aeon custom field placeholder]"
+  # NOTE: `location_title` is seeded via instance_conditional_fields below
+  # (Location), so digital-object instances can fall back to their file URI.
+  location_building: "[Aeon custom field placeholder]"       # Location building
+  location_floor: "[Aeon custom field placeholder]"            # Location floor
+  location_room: "[Aeon custom field placeholder]"              # Location room
+  location_area: "[Aeon custom field placeholder]"              # Location area
+  location_barcode: "[Aeon custom field placeholder]"        # Location barcode
+  location_classification: "[Aeon custom field placeholder]"  # Location classification
+  location_coordinate_1_label: "[Aeon custom field placeholder]"
+  location_coordinate_1_indicator: "[Aeon custom field placeholder]"
+  location_coordinate_2_label: "[Aeon custom field placeholder]"
+  location_coordinate_2_indicator: "[Aeon custom field placeholder]"
+  location_coordinate_3_label: "[Aeon custom field placeholder]"
+  location_coordinate_3_indicator: "[Aeon custom field placeholder]"
+  location_ref: "[Aeon custom field placeholder]"               # Location URI reference
+  location_note: "[Aeon custom field placeholder]"             # Container location notes
+  collection_identifier: "[Aeon custom field placeholder]"
+  collection_display_string: "[Aeon custom field placeholder]"
+  series_identifier: "[Aeon custom field placeholder]"
+  series_display_string: "[Aeon custom field placeholder]"
+
+# Instance fields seeded as CONDITIONAL rules — sources are tried in order and
+# the first non-empty value wins. This preserves the released client addon's
+# behavior: a digital-object instance fills the same Aeon fields (Volume and
+# item-number columns) that container instances use, falling back to the
+# digital object's title / identifier when the instance has no top container.
+# (Digital-object instances only appear when a consumer requests them with
+# include_instances=true&include_digital_objects=true.)
+instance_conditional_fields:
+  # Container type + indicator first ("Box 1"); the long display string and
+  # the digital object's title are fallbacks.
+  ItemVolume: [top_container_label, top_container_long_display_string, digital_object_title]
+  ItemNumber: [top_container_barcode, digital_object_id]
+  Location: [location_title, digital_object_file_uri]
+
+# Resource-specific fields
+resource_fields:
+  title: ItemTitle                          # Record title (HTML stripped)
+  creators: ItemAuthor                      # Own creator names (semicolon-separated)
+  collection_id: CallNumber                 # Own identifier (id_0-id_3 joined)
+  ead_id: EADNumber  # Real Aeon field; disabled until requested as a default
+  ead_location: "[Aeon custom field placeholder]"
+  finding_aid_title: "[Aeon custom field placeholder]"      # Informational; the citation consumer maps it to ItemSubtitle
+  finding_aid_subtitle: "[Aeon custom field placeholder]"
+  finding_aid_filing_title: "[Aeon custom field placeholder]"
+  finding_aid_date: "[Aeon custom field placeholder]"
+  finding_aid_author: "[Aeon custom field placeholder]"
+  finding_aid_description_rules: "[Aeon custom field placeholder]"
+  finding_aid_language: "[Aeon custom field placeholder]"
+  finding_aid_sponsor: "[Aeon custom field placeholder]"
+  finding_aid_edition_statement: "[Aeon custom field placeholder]"
+  finding_aid_series_statement: "[Aeon custom field placeholder]"
+  finding_aid_status: "[Aeon custom field placeholder]"
+  finding_aid_note: "[Aeon custom field placeholder]"
+  repository_processing_note: "[Aeon custom field placeholder]"
+
+# Archival object-specific fields.
+# Parity with the pre-plugin client addon: its grid showed the parent resource's title as the
+# item title, the archival object's own title as the subtitle, and the
+# parent resource's creators as the author.
+archival_object_fields:
+  title: ItemSubtitle                       # The AO's own title (HTML stripped)
+  collection_title: ItemTitle               # Parent resource title
+  collection_creators: ItemAuthor           # Parent resource creator names
+  collection_id: CallNumber                 # Parent resource identifier (id_0-id_3 joined)
+  component_id: ReferenceNumber             # Component unique identifier
+
+# Accession-specific fields.
+# Accessions store restriction text in direct fields (not notes), so the
+# Aeon restriction fields are fed from those here.
+accession_fields:
+  title: ItemTitle                          # Record title (HTML stripped)
+  creators: ItemAuthor                      # Own creator names (semicolon-separated)
+  accession_id: CallNumber                  # Accession identifier
+  access_restrictions_note: AccessRestrictions   # Direct field — accessions have no accessrestrict notes
+  # use_restrictions_note is deliberately NOT seeded (see the note_fields
+  # comment on userestrict); the extractor stays available.
+
+# NOTE: no digital_object section exists for the instance-import consumer.
+# The pre-plugin addon's instance import had no mappings for DO records
+# (DO grid rows come from the `instance` rules). DO records are
+# mapped by the citation consumer (citation_digital_object_fields below).
+# The DO extractors all remain available in the UI; two constraints worth
+# knowing about (also documented in README and in the stakeholder doc under
+# docs/digital-object-extractors.md):
+#
+#   * file_uri (and file_format_name, use_statement) read from a single
+#     file_version chosen as: the one with is_representative == true if any,
+#     else the first entry in file_versions. nil if file_versions is empty.
+#   * parent_collection_id / parent_collection_title walk
+#     linked_instances → archival_object → resource (or directly to a
+#     resource if linked that way). nil if no reachable parent.
+
+# =============================================================================
+# Citation-import consumer defaults (seeded for the
+# aspace_client_addon_citation_import consumer).
+#
+# Content policy: the pre-plugin addon's CitationDataImport tables were the
+# starting point, with three changes: archival objects get a citation set
+# (the old addon had none), accession ItemAuthor is the linked creators, not
+# the created_by audit field, and accessions map their identifier to
+# CallNumber. No `instance` rules are seeded — citation calls never request
+# instances.
+# =============================================================================
+citation_resource_fields:
+  title: ItemTitle                          # Pre-plugin addon: Title
+  creators: ItemAuthor                      # Pre-plugin addon: Creators
+  finding_aid_title: ItemSubtitle           # Pre-plugin addon: FindingAidTitle
+  creation_date: ItemDate                   # Creation-labeled dates
+  staff_url: ItemCitation                   # Full staff-interface link
+
+citation_accession_fields:
+  title: ItemTitle                          # Pre-plugin addon: Title
+  creators: ItemAuthor                      # Linked creator agents
+  accession_id: CallNumber                  # Accession identifier
+  creation_date: ItemDate                   # Creation-labeled dates
+  staff_url: ItemCitation                   # Full staff-interface link
+
+# Archival object citation set:
+# mirrors the Resource citation pattern, adapted to the object's place in the
+# hierarchy — the same arrangement Instance Import already uses for archival
+# objects — plus the note mappings the instance-side sets carry.
+citation_archival_object_fields:
+  collection_id: CallNumber                 # Parent resource identifier
+  collection_title: ItemTitle               # Parent resource title
+  title: ItemSubtitle                       # The AO's own title (HTML stripped)
+  collection_creators: ItemAuthor           # Parent resource creator names (published agents only)
+  creation_date: ItemDate                   # Creation-labeled dates
+  accessrestrict: AccessRestrictions        # Access restriction notes (published subnotes)
+  restrictions_apply: "[Aeon custom field placeholder]"  # No Aeon field exists, so disabled. Cascade lives in the extractor
+  staff_url: ItemCitation                   # Full staff-interface link
+
+citation_digital_object_fields:
+  title: ItemTitle                          # Pre-plugin addon: Title
+  creators: ItemAuthor                      # Pre-plugin addon: Creators
+  parent_collection_title: ItemSubtitle     # Pre-plugin addon: FindingAidTitle (dead no-op there; realized as the parent resource title)
+  creation_date: ItemDate                   # Creation-labeled dates
+  file_uri: Location                        # Pre-plugin addon: FileUri
+  staff_url: ItemCitation                   # Full staff-interface link
+
+# =============================================================================
+# Seeded rules that ship DISABLED.
+#
+# Placeholder rules: none of their data has a stock Aeon Transactions column,
+# and Aeon ships with no custom fields. Each one targets the label below,
+# and the setup script appends a two-digit number in seed order:
+# "[Aeon custom field placeholder]_00", "_01", and so on. The number is
+# unique across the whole seed. It is never reused for the same data, so no
+# one assumes that renaming one rule renames another.
+# The number is required anyway: the unique index allows one rule per
+# Aeon field name per application, scope, and record type. Placeholder
+# rules always ship disabled. To use one, a site creates the Aeon custom
+# field, renames the rule's target to CustomFields.<ShortName>, then
+# enables it.
+#
+# disabled_default_fields: real Aeon fields that also ship disabled until
+# requested as defaults. Keyed by TARGET field name.
+# =============================================================================
+placeholder_field_label: "[Aeon custom field placeholder]"
+
+disabled_default_fields:
+  - EADNumber

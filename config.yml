@@ -1,0 +1,9 @@
+# ArchivesSpace plugin configuration.
+#
+# system_menu_controller — name of the frontend controller (without "Controller"
+# suffix). AS will add a link in the staff Plug-ins dropdown that points to
+# {:controller => :aeon_mapping, :action => :index}, which our routes.rb maps to
+# `/plugins/aeon_mapping`. The link label comes from
+# `plugins.aeon_mapping.label` in frontend/locales/en.yml.
+system_menu_controller: aeon_mapping
+no_automatic_routes: true

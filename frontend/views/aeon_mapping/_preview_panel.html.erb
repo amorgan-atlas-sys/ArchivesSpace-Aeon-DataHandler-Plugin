@@ -1,0 +1,149 @@
+<%# locals: repo_id, record_type, global_scope %>
+<% global_scope ||= false %>
+<%
+  # Compute a record-type-appropriate URI as the input placeholder.
+  # Instances live under archival objects in AS, so we point users at an AO.
+  rt_for_uri = (record_type == 'instance') ? 'archival_object' : record_type
+  uri_path_segment = "#{rt_for_uri}s"  # pluralize: archival_object -> archival_objects, resource -> resources, accession -> accessions
+  # For global scope we show a generic placeholder without a repo_id prefix.
+  sample_uri = global_scope ? "/repositories/2/#{uri_path_segment}/1" : "/repositories/#{repo_id}/#{uri_path_segment}/1"
+%>
+
+<div class="aeon-preview-panel" id="preview-panel"
+     data-repo-id="<%= repo_id %>"
+     data-record-type="<%= record_type %>"
+     data-scope="<%= global_scope ? 'global' : 'repo' %>"
+     data-sample-uri="<%= sample_uri %>">
+
+  <h3 class="preview-title"><%= t('plugins.aeon_mapping.preview.title') %></h3>
+
+  <%# Record URI input — with Browse and Load buttons %>
+  <div class="form-group preview-uri-row mb-2">
+    <label for="preview-record-uri" class="mr-2 font-weight-bold">
+      <%= t('plugins.aeon_mapping.preview.record_uri_label') %>
+    </label>
+    <div class="input-group input-group-sm">
+      <input type="text"
+             class="form-control"
+             id="preview-record-uri"
+             placeholder="<%= sample_uri %>"
+             aria-describedby="preview-uri-help"
+             autocomplete="off"
+             spellcheck="false">
+      <div class="input-group-append">
+        <button type="button" id="preview-browse-btn"
+                class="btn btn-outline-secondary"
+                aria-label="<%= t('plugins.aeon_mapping.preview.browse_button') %>"
+                title="<%= t('plugins.aeon_mapping.preview.browse_button') %>">
+          <span aria-hidden="true">&#128270;</span>
+          <span class="sr-only"><%= t('plugins.aeon_mapping.preview.browse_button') %></span>
+        </button>
+        <button type="button" id="preview-load-btn" class="btn btn-primary">
+          <%= t('plugins.aeon_mapping.preview.load_button') %>
+        </button>
+      </div>
+    </div>
+  </div>
+  <small id="preview-uri-help" class="form-text text-muted mb-3">
+    <%= t('plugins.aeon_mapping.preview.record_uri_help') %>
+  </small>
+
+  <%# ARIA live region for screen readers %>
+  <div id="preview-live-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+  <%# Preview body — stays empty until a record loads %>
+  <div id="preview-content" class="preview-content">
+
+    <%# Empty state — visually inviting %>
+    <div id="preview-empty-msg" class="aeon-preview-empty text-center py-4" role="status">
+      <div class="aeon-preview-empty-icon mb-2" aria-hidden="true">&#128196;</div>
+      <p class="lead mb-1"><%= t('plugins.aeon_mapping.preview.empty_state_heading') %></p>
+      <small class="text-muted">
+        <%= t('plugins.aeon_mapping.preview.empty_state_help_html',
+              :sample_uri => content_tag(:code, sample_uri)).html_safe %>
+      </small>
+    </div>
+
+    <%# Loading indicator %>
+    <div id="preview-loading" class="d-none text-muted py-3 text-center" role="status">
+      <em><%= t('plugins.aeon_mapping.preview.loading') %></em>
+    </div>
+
+    <%# Error display %>
+    <div id="preview-error" class="alert alert-danger small d-none" role="alert"></div>
+
+    <%# Truncation notice %>
+    <div id="preview-truncated-notice" class="alert alert-warning small d-none" role="status">
+      <%= t('plugins.aeon_mapping.preview.truncated_notice') %>
+    </div>
+
+    <%# Tabbed preview body — hidden until a record loads %>
+    <div id="preview-tabs-wrapper" class="d-none">
+      <ul class="nav nav-tabs preview-nav-tabs" role="tablist">
+        <li class="nav-item">
+          <button class="nav-link active" id="preview-tab-trace" role="tab"
+                  aria-controls="preview-tabpanel-trace" aria-selected="true"
+                  data-target="trace">
+            <%= t('plugins.aeon_mapping.preview.tab_trace') %>
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="preview-tab-raw" role="tab"
+                  aria-controls="preview-tabpanel-raw" aria-selected="false"
+                  data-target="raw">
+            <%= t('plugins.aeon_mapping.preview.tab_raw_json') %>
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+
+        <%# Tab 1: Trace table (combined Sources → Extracted → Final Output) %>
+        <div class="tab-pane active" id="preview-tabpanel-trace" role="tabpanel"
+             aria-labelledby="preview-tab-trace">
+          <p class="small text-muted mt-2 mb-1">
+            <%= t('plugins.aeon_mapping.preview.trace_help') %>
+          </p>
+          <div class="table-responsive">
+            <table class="table table-sm aeon-trace-table" id="trace-table">
+              <thead>
+                <tr>
+                  <th scope="col"><%= t('plugins.aeon_mapping.preview.col_aeon_field') %></th>
+                  <th scope="col"><%= t('plugins.aeon_mapping.preview.col_sources') %></th>
+                  <th scope="col"><%= t('plugins.aeon_mapping.preview.col_final') %></th>
+                </tr>
+              </thead>
+              <tbody id="trace-table-body">
+                <%# Populated by JS %>
+              </tbody>
+            </table>
+          </div>
+
+          <%# Unused extractors — small expandable area %>
+          <details class="aeon-unused-extractors mt-2">
+            <summary class="small text-muted"><%= t('plugins.aeon_mapping.preview.unused_extractors_summary') %></summary>
+            <dl id="unused-extractors-list" class="aeon-extracted-values mt-2">
+              <%# Populated by JS — predefined extractors with values that no current rule consumes %>
+            </dl>
+          </details>
+        </div>
+
+        <%# Tab 2: Raw Record JSON tree %>
+        <div class="tab-pane" id="preview-tabpanel-raw" role="tabpanel"
+             aria-labelledby="preview-tab-raw" hidden>
+          <p class="small text-muted mt-2 mb-1">
+            <%= t('plugins.aeon_mapping.preview.raw_json_help') %>
+          </p>
+          <div id="raw-json-tree" class="aeon-json-tree font-monospace small"
+               role="tree"
+               aria-label="<%= t('plugins.aeon_mapping.preview.raw_json_title') %>">
+            <%# Rendered by JS %>
+          </div>
+        </div>
+
+      </div><%# /tab-content %>
+    </div><%# /preview-tabs-wrapper %>
+
+  </div><%# /preview-content %>
+
+</div><%# /preview-panel %>

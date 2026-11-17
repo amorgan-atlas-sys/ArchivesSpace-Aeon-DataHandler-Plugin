@@ -1,0 +1,188 @@
+<%# locals: rules (Array), repo_id (String), record_type (String), global_scope (Boolean) %>
+<% global_scope ||= false %>
+
+<div class="aeon-rules-table-header d-flex justify-content-between align-items-center mb-2">
+  <h3 class="mb-0"><%= t('plugins.aeon_mapping.sections.rules_list') %></h3>
+  <button type="button" class="btn btn-sm btn-primary"
+          id="add-rule-btn"
+          data-action="add"
+          data-repo-id="<%= repo_id %>"
+          data-record-type="<%= record_type %>"
+          aria-haspopup="dialog"
+          aria-label="<%= t('plugins.aeon_mapping.actions.add_rule') %>">
+    + <%= t('plugins.aeon_mapping.actions.add_rule') %>
+  </button>
+</div>
+
+<% if rules.empty? %>
+  <p class="text-muted"><em><%= t('plugins.aeon_mapping.table.no_rules') %></em></p>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover aeon-rules-table"
+           id="rules-table"
+           data-repo-id="<%= repo_id %>"
+           data-record-type="<%= record_type %>"
+           aria-label="<%= t('plugins.aeon_mapping.title') %> — <%= record_type_label(record_type) %>">
+      <thead>
+        <tr>
+          <th scope="col" style="width:2rem;" aria-label="<%= t('plugins.aeon_mapping.actions.move_up') %> / <%= t('plugins.aeon_mapping.actions.move_down') %>"></th>
+          <th scope="col"><%= t('plugins.aeon_mapping.table.aeon_field') %></th>
+          <th scope="col"><%= t('plugins.aeon_mapping.table.transformation') %></th>
+          <th scope="col"><%= t('plugins.aeon_mapping.table.sources') %></th>
+          <th scope="col"><%= t('plugins.aeon_mapping.table.enabled') %></th>
+          <th scope="col"><%= t('plugins.aeon_mapping.table.origin') %></th>
+          <th scope="col"><%= t('plugins.aeon_mapping.table.actions') %></th>
+        </tr>
+      </thead>
+      <tbody id="rules-tbody">
+        <% rules.each_with_index do |rule, idx| %>
+          <tr class="aeon-rule-row" id="rule-row-<%= rule['id'] %>"
+              data-rule-id="<%= rule['id'] %>"
+              data-sort-order="<%= rule['sort_order'] %>"
+              data-aeon-field="<%= rule['aeon_field_name'] %>"
+              data-origin="<%= rule['origin'] %>">
+
+            <%# Drag / reorder handle %>
+            <td class="aeon-drag-handle text-center" style="cursor:move;">
+              <span aria-hidden="true" title="<%= t('plugins.aeon_mapping.actions.move_up') %> / <%= t('plugins.aeon_mapping.actions.move_down') %>">&#9776;</span>
+              <div class="sr-only">
+                <button type="button"
+                        class="btn btn-link btn-sm p-0 rule-move-up"
+                        data-rule-id="<%= rule['id'] %>"
+                        aria-label="<%= t('plugins.aeon_mapping.actions.move_up') %> <%= rule['aeon_field_name'] %>"
+                        <%= 'disabled' if idx == 0 %>>
+                  &#8593;
+                </button>
+                <button type="button"
+                        class="btn btn-link btn-sm p-0 rule-move-down"
+                        data-rule-id="<%= rule['id'] %>"
+                        aria-label="<%= t('plugins.aeon_mapping.actions.move_down') %> <%= rule['aeon_field_name'] %>"
+                        <%= 'disabled' if idx == rules.length - 1 %>>
+                  &#8595;
+                </button>
+              </div>
+            </td>
+
+            <%# Aeon field name %>
+            <td class="font-weight-bold"><%= rule['aeon_field_name'] %></td>
+
+            <%# Transformation type + options summary %>
+            <td>
+              <span><%= transformation_type_label(rule['transformation_type']) %></span>
+              <% summary = transformation_options_summary(rule) %>
+              <% unless summary.empty? %>
+                <br><small class="text-muted"><%= summary %></small>
+              <% end %>
+            </td>
+
+            <%# Sources summary %>
+            <td>
+              <% (rule['sources'] || []).each do |src| %>
+                <div class="small">
+                  <% if src['source_type'] == 'predefined' %>
+                    <span class="badge badge-light"><%= source_type_label('predefined') %></span>
+                    <code><%= src['source_value'] %></code>
+                  <% else %>
+                    <span class="badge badge-light"><%= source_type_label('jsonpath') %></span>
+                    <code><%= src['source_value'] %></code>
+                  <% end %>
+                  <% if src['placeholder'] && !src['placeholder'].empty? %>
+                    <em class="text-muted">→ {<%= src['placeholder'] %>}</em>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+
+            <%# Enabled toggle %>
+            <td class="text-center">
+              <% toggle_label = rule['enabled'] ?
+                   t('plugins.aeon_mapping.table.enabled') :
+                   t('plugins.aeon_mapping.form.enabled') %>
+              <input type="checkbox"
+                     class="rule-enabled-toggle"
+                     data-rule-id="<%= rule['id'] %>"
+                     data-repo-id="<%= repo_id %>"
+                     data-record-type="<%= record_type %>"
+                     <%= 'checked' if rule['enabled'] %>
+                     aria-label="<%= t('plugins.aeon_mapping.form.enabled') %>: <%= rule['aeon_field_name'] %>">
+            </td>
+
+            <%# Origin badge %>
+            <td>
+              <% if global_scope %>
+                <span class="<%= rule_origin_badge_class('global') %>">
+                  <%= t('plugins.aeon_mapping.origin.global_static') %>
+                </span>
+              <% else %>
+                <span class="<%= rule_origin_badge_class(rule['origin']) %>">
+                  <% badge_key = rule['origin'] == 'global' ? 'global' : (rule['has_global_default'] ? 'repo' : 'repo_only') %>
+                  <%= t("plugins.aeon_mapping.origin.#{badge_key}") %>
+                </span>
+              <% end %>
+            </td>
+
+            <%# Action buttons %>
+            <td class="aeon-rule-actions text-nowrap">
+              <button type="button"
+                      class="btn btn-xs btn-outline-primary rule-edit-btn"
+                      data-rule-id="<%= rule['id'] %>"
+                      data-repo-id="<%= global_scope ? '__global__' : repo_id %>"
+                      data-record-type="<%= record_type %>"
+                      data-origin="<%= rule['origin'] %>"
+                      data-has-default="<%= rule['has_global_default'] ? 'true' : 'false' %>"
+                      aria-label="<%= t('plugins.aeon_mapping.actions.edit') %>: <%= rule['aeon_field_name'] %>"
+                      aria-haspopup="dialog">
+                <%= t('plugins.aeon_mapping.actions.edit') %>
+              </button>
+
+              <% if global_scope %>
+                <%# In global scope every rule is global — show delete, no reset %>
+                <%= form_tag({:controller => :aeon_mapping, :action => :delete_global_rule,
+                              :id => rule['id'], :record_type => record_type,
+                              :consumer => consumer_key,
+                              :aeon_field_name => rule['aeon_field_name']},
+                             :method => :post, :class => 'd-inline') do %>
+                  <button type="submit"
+                          class="btn btn-xs btn-outline-danger"
+                          aria-label="<%= t('plugins.aeon_mapping.actions.delete') %>: <%= rule['aeon_field_name'] %>"
+                          data-confirm="<%= t('plugins.aeon_mapping.actions.confirm_delete') %>">
+                    <%= t('plugins.aeon_mapping.actions.delete') %>
+                  </button>
+                <% end %>
+              <% elsif rule['origin'] == 'repo' %>
+                <% if rule['has_global_default'] %>
+                  <%= form_tag({:controller => :aeon_mapping, :action => :reset_rule,
+                                :id => rule['id'], :repo_id => repo_id,
+                                :record_type => record_type,
+                                :consumer => consumer_key,
+                                :aeon_field_name => rule['aeon_field_name']}, :method => :post, :class => 'd-inline') do %>
+                    <button type="submit"
+                            class="btn btn-xs btn-outline-secondary"
+                            aria-label="<%= t('plugins.aeon_mapping.actions.reset') %>: <%= rule['aeon_field_name'] %>"
+                            data-confirm="<%= t('plugins.aeon_mapping.actions.confirm_reset') %>">
+                      <%= t('plugins.aeon_mapping.actions.reset') %>
+                    </button>
+                  <% end %>
+                <% end %>
+
+                <%= form_tag({:controller => :aeon_mapping, :action => :delete_rule,
+                              :id => rule['id'], :repo_id => repo_id,
+                              :record_type => record_type,
+                              :consumer => consumer_key,
+                              :aeon_field_name => rule['aeon_field_name']}, :method => :post, :class => 'd-inline') do %>
+                  <button type="submit"
+                          class="btn btn-xs btn-outline-danger"
+                          aria-label="<%= t('plugins.aeon_mapping.actions.delete') %>: <%= rule['aeon_field_name'] %>"
+                          data-confirm="<%= t('plugins.aeon_mapping.actions.confirm_delete') %>">
+                    <%= t('plugins.aeon_mapping.actions.delete') %>
+                  </button>
+                <% end %>
+              <% end %>
+            </td>
+
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

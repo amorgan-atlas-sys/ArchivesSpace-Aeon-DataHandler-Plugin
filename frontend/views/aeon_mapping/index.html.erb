@@ -1,0 +1,272 @@
+<% @page_title = t('plugins.aeon_mapping.title') %>
+
+<a href="#aeon-mapping-main" class="sr-only sr-only-focusable">
+  <%= t('plugins.aeon_mapping.title') %> — Skip to main content
+</a>
+
+<div class="record-pane" id="aeon-mapping-page"
+     data-repo-id="<%= @repo_id %>"
+     data-record-type="<%= @record_type %>"
+     data-scope="<%= @global_scope ? 'global' : 'repo' %>"
+     data-consumer="<%= @consumer_key %>"
+     data-consumer-id="<%= @consumer && @consumer['id'] %>"
+     data-consumer-label="<%= @consumer && @consumer['label'] %>"
+     data-consumer-protected="<%= @consumer && @consumer['protected'] ? 'true' : 'false' %>"
+     data-consumer-rule-count="<%= @consumer && @consumer['rule_count'] %>"
+     <%= aeon_mapping_js_i18n_attributes %>>
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h2><%= t('plugins.aeon_mapping.title') %></h2>
+      <p class="text-muted mb-0"><%= t('plugins.aeon_mapping.description') %></p>
+    </div>
+    <%# Import / Export are scoped to the selected consumer + record type. %>
+    <% rt_label = record_type_label(@record_type) %>
+    <div class="d-flex gap-2 mt-1">
+      <% if @global_scope %>
+        <%= link_to t('plugins.aeon_mapping.actions.export_global'),
+                    url_for(:controller => :aeon_mapping, :action => :global_export,
+                            :record_type => @record_type, :consumer => @consumer_key),
+                    :class => 'btn btn-sm btn-outline-secondary',
+                    :aria => { :label => t('plugins.aeon_mapping.actions.export_global') } %>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                data-toggle="modal" data-target="#import-modal"
+                aria-label="<%= t('plugins.aeon_mapping.actions.import_global') %>">
+          <%= t('plugins.aeon_mapping.actions.import_global') %>
+        </button>
+      <% else %>
+        <%= link_to t('plugins.aeon_mapping.actions.export_scoped', :record_type => rt_label),
+                    url_for(:controller => :aeon_mapping, :action => :export,
+                            :repo_id => @repo_id, :record_type => @record_type,
+                            :consumer => @consumer_key),
+                    :class => 'btn btn-sm btn-outline-secondary',
+                    :aria => { :label => t('plugins.aeon_mapping.actions.export_scoped', :record_type => rt_label) } %>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                data-toggle="modal" data-target="#import-modal"
+                aria-label="<%= t('plugins.aeon_mapping.actions.import_scoped', :record_type => rt_label) %>">
+          <%= t('plugins.aeon_mapping.actions.import_scoped', :record_type => rt_label) %>
+        </button>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Consumer/Application selector — the outer dimension of the mapping
+      structure. Selecting a consumer reloads the page scoped to it. ── %>
+  <div class="aeon-mapping-consumer-bar card mb-3">
+    <div class="card-body py-2">
+      <div class="row align-items-end">
+        <div class="col-md-6">
+          <label for="consumer-selector" class="col-form-label col-form-label-sm font-weight-bold">
+            <%= t('plugins.aeon_mapping.sections.consumer_selector') %>
+          </label>
+          <%= form_tag({:controller => :aeon_mapping, :action => :index}, :method => :get, :class => 'd-inline') do %>
+            <input type="hidden" name="record_type" value="<%= @record_type %>">
+            <input type="hidden" name="repo_id" value="<%= @global_scope ? '__global__' : @repo_id %>">
+            <select id="consumer-selector" name="consumer" class="form-control form-control-sm d-inline-block"
+                    style="width:auto; max-width:100%;" onchange="this.form.submit()"
+                    aria-label="<%= t('plugins.aeon_mapping.sections.consumer_selector') %>">
+              <% @consumers.each do |c| %>
+                <option value="<%= c['key'] %>" <%= 'selected' if c['key'] == @consumer_key %>>
+                  <%= c['label'] %> (<%= c['key'] %>)
+                </option>
+              <% end %>
+            </select>
+          <% end %>
+        </div>
+        <div class="col-md-6 text-right">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-consumer-btn">
+            <%= t('plugins.aeon_mapping.consumers.add') %>
+          </button>
+          <% if @consumer %>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="rename-consumer-btn">
+              <%= t('plugins.aeon_mapping.consumers.rename') %>
+            </button>
+            <% unless @consumer['protected'] %>
+              <button type="button" class="btn btn-sm btn-outline-danger" id="delete-consumer-btn">
+                <%= t('plugins.aeon_mapping.consumers.delete') %>
+              </button>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <% if @consumer && @consumer['protected'] %>
+        <div class="small text-muted mt-1">
+          <%= t('plugins.aeon_mapping.consumers.protected_note') %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Top bar: repository selector + record-type tabs ── %>
+  <div class="aeon-mapping-controls card mb-3">
+    <div class="card-body py-2">
+      <div class="row align-items-center">
+        <div class="col-md-4">
+          <label for="repo-selector" class="col-form-label col-form-label-sm font-weight-bold">
+            <%= t('plugins.aeon_mapping.sections.repo_selector') %>
+          </label>
+          <%= form_tag({:controller => :aeon_mapping, :action => :index}, :method => :get, :class => 'd-inline') do %>
+            <input type="hidden" name="record_type" value="<%= @record_type %>">
+            <input type="hidden" name="consumer" value="<%= @consumer_key %>">
+            <select id="repo-selector" name="repo_id" class="form-control form-control-sm d-inline-block"
+                    style="width:auto; max-width:100%;" onchange="this.form.submit()"
+                    aria-label="<%= t('plugins.aeon_mapping.sections.repo_selector') %>">
+              <option value="__global__" <%= 'selected' if @global_scope %>>
+                <%= t('plugins.aeon_mapping.actions.scope_global_option') %>
+              </option>
+              <% @accessible_repos.each do |repo| %>
+                <% rid = repo["uri"]&.split("/")&.last %>
+                <option value="<%= rid %>" <%= 'selected' if !@global_scope && rid == @repo_id.to_s %>>
+                  <%= repo["repo_code"] %> — <%= repo["name"] %>
+                </option>
+              <% end %>
+            </select>
+          <% end %>
+
+          <%# Scope banner — static per page load, no ARIA role or aria-live %>
+          <div class="alert alert-info mt-2 mb-0 py-1 px-2 small" id="aeon-scope-banner">
+            <% consumer_label = @consumer ? @consumer['label'] : '' %>
+            <% if @global_scope %>
+              <%= t('plugins.aeon_mapping.scope_banner.global', :consumer => consumer_label) %>
+            <% else %>
+              <% repo_label = (@accessible_repos.find { |r| r["uri"]&.split("/")&.last == @repo_id.to_s } || {})["repo_code"] || @repo_id %>
+              <%= t('plugins.aeon_mapping.scope_banner.repo', :repo => repo_label, :consumer => consumer_label) %>
+            <% end %>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <nav aria-label="<%= t('plugins.aeon_mapping.sections.record_type_tabs') %>">
+            <ul class="nav nav-tabs border-bottom-0 mb-0" role="tablist">
+              <% AeonMappingHelper::RECORD_TYPES.each do |rt| %>
+                <li class="nav-item" role="presentation">
+                  <%= link_to record_type_label(rt),
+                              url_for(:controller => :aeon_mapping, :action => :index,
+                                      :repo_id => @global_scope ? '__global__' : @repo_id,
+                                      :record_type => rt, :consumer => @consumer_key),
+                              :class => "nav-link#{rt == @record_type ? ' active' : ''}",
+                              :role => 'tab',
+                              :'aria-selected' => rt == @record_type ? 'true' : 'false' %>
+                </li>
+              <% end %>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Page messages — save confirmations and inline errors land here
+      (persistent and top-of-page, not transient toasts). Flash entries from
+      redirect flows (delete, reset, import) render here too: the AS layout
+      does not display flash for plugin pages. ── %>
+  <div id="aeon-mapping-messages" aria-live="polite">
+    <% { success: "alert-success", warning: "alert-warning", error: "alert-danger" }.each do |key, css_class| %>
+      <% next unless flash[key] %>
+      <div class="alert alert-dismissible <%= css_class %>" role="<%= key == :error ? 'alert' : 'status' %>">
+        <%= flash[key] %>
+        <button type="button" class="close" data-dismiss="alert"
+                aria-label="<%= t('plugins.aeon_mapping.actions.cancel') %>">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Rules table (full width) ── %>
+  <div role="main" id="aeon-mapping-main" class="mb-4">
+    <% if @global_scope || @repo_id %>
+      <%= render :partial => 'aeon_mapping/rules_table',
+                 :locals => { :rules => @rules, :repo_id => @repo_id,
+                              :record_type => @record_type, :global_scope => @global_scope,
+                              :consumer_key => @consumer_key } %>
+    <% else %>
+      <p class="text-muted"><%= t('plugins.aeon_mapping.sections.repo_selector') %></p>
+    <% end %>
+  </div>
+
+  <%# ── Preview panel (full width, below rules) ── %>
+  <section class="aeon-mapping-preview-section" role="complementary"
+           aria-label="<%= t('plugins.aeon_mapping.sections.preview') %>">
+    <%= render :partial => 'aeon_mapping/preview_panel',
+               :locals => { :repo_id => @repo_id, :record_type => @record_type,
+                            :global_scope => @global_scope } %>
+  </section>
+
+</div>
+
+<%# ── Rule CRUD modal ── %>
+<%= render :partial => 'aeon_mapping/rule_form_modal',
+           :locals => { :repo_id => @repo_id, :record_type => @record_type,
+                        :global_scope => @global_scope } %>
+
+<%# ── Consumer add/rename modal ── %>
+<%= render :partial => 'aeon_mapping/consumer_modal' %>
+
+<%# ── Import modal (scoped to the current record type) ── %>
+<div class="modal fade" id="import-modal" tabindex="-1" role="dialog"
+     aria-labelledby="import-modal-title" aria-modal="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="import-modal-title">
+          <% if @global_scope %>
+            <%= t('plugins.aeon_mapping.actions.import_global') %>
+          <% else %>
+            <%= t('plugins.aeon_mapping.actions.import_scoped', :record_type => record_type_label(@record_type)) %>
+          <% end %>
+        </h5>
+        <button type="button" class="close" data-dismiss="modal"
+                aria-label="<%= t('plugins.aeon_mapping.actions.cancel') %>">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <% import_action = @global_scope ? :global_import : :import %>
+      <% import_params = @global_scope ? {} : { :repo_id => @repo_id } %>
+      <%= form_tag({:controller => :aeon_mapping, :action => import_action}.merge(import_params),
+                   :method => :post, :multipart => true) do %>
+        <%# Scope the import to the selected consumer + record type — the
+            backend skips rules in the file for other record types, and rules
+            land in the selected consumer regardless of the file's origin. %>
+        <input type="hidden" name="record_type" value="<%= @record_type %>">
+        <input type="hidden" name="consumer" value="<%= @consumer_key %>">
+        <div class="modal-body">
+          <div class="alert alert-info small" role="note">
+            <%= t('plugins.aeon_mapping.form.import_scope_note',
+                  :record_type => record_type_label(@record_type)) %>
+          </div>
+          <div class="form-group">
+            <label for="import-file"><%= t('plugins.aeon_mapping.form.import_file') %></label>
+            <input type="file" class="form-control-file" id="import-file" name="import_file"
+                   accept=".json">
+          </div>
+          <div class="form-group">
+            <label for="import-json"><%= t('plugins.aeon_mapping.form.import_json') %></label>
+            <textarea class="form-control" id="import-json" name="import_json" rows="6"
+                      placeholder='{"rules": [...]}'></textarea>
+          </div>
+          <div class="form-group">
+            <label for="import-strategy"><%= t('plugins.aeon_mapping.form.import_strategy') %></label>
+            <select class="form-control" id="import-strategy" name="strategy">
+              <option value="merge"><%= t('plugins.aeon_mapping.form.import_strategy_merge') %></option>
+              <% if @global_scope %>
+                <option value="replace"><%= t('plugins.aeon_mapping.form.import_strategy_replace_global',
+                                              :record_type => record_type_label(@record_type)) %></option>
+              <% else %>
+                <option value="replace"><%= t('plugins.aeon_mapping.form.import_strategy_replace',
+                                              :record_type => record_type_label(@record_type)) %></option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <%= t('plugins.aeon_mapping.actions.cancel') %>
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <%= t('plugins.aeon_mapping.actions.import_submit') %>
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,256 @@
+<%# locals: repo_id, record_type, global_scope %>
+<%# This modal is populated via JavaScript when Add or Edit is clicked %>
+<% global_scope ||= false %>
+
+<div class="modal fade" id="rule-form-modal" tabindex="-1" role="dialog"
+     aria-labelledby="rule-modal-title" aria-modal="true"
+     data-global-scope="<%= global_scope ? 'true' : 'false' %>">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="rule-modal-title">
+          <span id="modal-title-text"><%= t('plugins.aeon_mapping.actions.add_rule') %></span>
+        </h5>
+        <button type="button" class="close" id="rule-modal-close"
+                data-dismiss="modal"
+                aria-label="<%= t('plugins.aeon_mapping.actions.cancel') %>">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form id="rule-form" method="post" novalidate>
+        <input type="hidden" name="authenticity_token" value="" id="rule-form-csrf">
+        <input type="hidden" name="repo_id" id="rule-form-repo-id" value="<%= repo_id %>">
+        <input type="hidden" name="record_type" id="rule-form-record-type" value="<%= record_type %>">
+        <input type="hidden" name="_rule_id" id="rule-form-rule-id" value="">
+
+        <div class="modal-body">
+
+          <%# ── Global rule notice ── %>
+          <div id="global-rule-notice" class="alert alert-info d-none" role="note">
+            <%= t('plugins.aeon_mapping.help.global_rule_note') %>
+          </div>
+
+          <div class="row">
+            <%# Left column: core fields %>
+            <div class="col-md-6">
+
+              <div class="form-group">
+                <label for="rule-aeon-field-name">
+                  <%= t('plugins.aeon_mapping.form.aeon_field_name') %>
+                  <span aria-hidden="true" class="text-danger">*</span>
+                </label>
+                <%# Native HTML5 combobox: input + datalist. Users see autocomplete
+                    suggestions from the common Aeon field list but can still type
+                    any custom value the browser does not block. %>
+                <input type="text" class="form-control" id="rule-aeon-field-name"
+                       name="aeon_field_name" required
+                       list="aeon-field-suggestions"
+                       autocomplete="off"
+                       aria-describedby="aeon-field-name-help"
+                       aria-autocomplete="list"
+                       aria-required="true"
+                       placeholder="<%= t('plugins.aeon_mapping.form.aeon_field_name_placeholder') %>">
+                <datalist id="aeon-field-suggestions">
+                  <% AeonMappingHelper::COMMON_AEON_FIELDS.each do |field| %>
+                    <option value="<%= field %>"></option>
+                  <% end %>
+                </datalist>
+                <small id="aeon-field-name-help" class="form-text text-muted">
+                  <%= t('plugins.aeon_mapping.form.aeon_field_name_help') %>
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label for="rule-transformation-type">
+                  <%= t('plugins.aeon_mapping.form.transformation_type') %>
+                </label>
+                <%# Each option carries its help text in data-help so the JS
+                    can show the right description without a client-side i18n
+                    table. %>
+                <select class="form-control" id="rule-transformation-type"
+                        name="transformation_type"
+                        aria-describedby="transformation-type-help">
+                  <% AeonMappingHelper::TRANSFORMATION_TYPES.each do |tt| %>
+                    <option value="<%= tt %>"
+                            data-help="<%= t("plugins.aeon_mapping.transformation_type_help.#{tt}") %>">
+                      <%= t("plugins.aeon_mapping.transformation_types.#{tt}") %>
+                    </option>
+                  <% end %>
+                </select>
+                <small id="transformation-type-help" class="form-text text-muted" aria-live="polite">
+                  <%# Populated by JS from the selected option's data-help %>
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label for="rule-max-length"><%= t('plugins.aeon_mapping.form.max_length') %></label>
+                <input type="number" class="form-control" id="rule-max-length"
+                       name="max_length" min="1" step="1"
+                       aria-describedby="max-length-help">
+                <small id="max-length-help" class="form-text text-muted">
+                  <%= t('plugins.aeon_mapping.form.max_length_help') %>
+                </small>
+              </div>
+
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="rule-enabled"
+                       name="enabled" value="1" checked
+                       aria-describedby="enabled-help">
+                <label class="form-check-label" for="rule-enabled">
+                  <%= t('plugins.aeon_mapping.form.enabled') %>
+                </label>
+                <small id="enabled-help" class="form-text text-muted">
+                  <%= t('plugins.aeon_mapping.form.enabled_help') %>
+                </small>
+              </div>
+
+            </div>
+
+            <%# Right column: transformation-specific options %>
+            <div class="col-md-6">
+
+              <%# concat: delimiter %>
+              <div id="opts-concat" class="transformation-opts d-none">
+                <div class="form-group">
+                  <label for="rule-delimiter"><%= t('plugins.aeon_mapping.form.delimiter') %></label>
+                  <input type="text" class="form-control" id="rule-delimiter"
+                         name="delimiter"
+                         placeholder="<%= t('plugins.aeon_mapping.form.delimiter_placeholder') %>"
+                         aria-describedby="delimiter-help">
+                  <small id="delimiter-help" class="form-text text-muted">
+                    <%= t('plugins.aeon_mapping.form.delimiter_help') %>
+                  </small>
+                </div>
+              </div>
+
+              <%# template: template string %>
+              <div id="opts-template" class="transformation-opts d-none">
+                <div class="form-group">
+                  <label for="rule-template"><%= t('plugins.aeon_mapping.form.template') %></label>
+                  <input type="text" class="form-control" id="rule-template"
+                         name="template"
+                         placeholder="<%= t('plugins.aeon_mapping.form.template_placeholder') %>"
+                         aria-describedby="template-help">
+                  <small id="template-help" class="form-text text-muted">
+                    <%= t('plugins.aeon_mapping.form.template_help') %>
+                  </small>
+                  <div id="template-placeholder-hints" class="mt-1"></div>
+                </div>
+              </div>
+
+              <%# extract: regex pattern %>
+              <div id="opts-extract" class="transformation-opts d-none">
+                <div class="form-group">
+                  <label for="rule-pattern"><%= t('plugins.aeon_mapping.form.pattern') %></label>
+                  <input type="text" class="form-control" id="rule-pattern"
+                         name="pattern"
+                         placeholder="<%= t('plugins.aeon_mapping.form.pattern_placeholder') %>"
+                         aria-describedby="pattern-help pattern-validation">
+                  <small id="pattern-help" class="form-text text-muted">
+                    <%= t('plugins.aeon_mapping.form.pattern_help') %>
+                  </small>
+                  <div id="pattern-validation" class="invalid-feedback" role="alert"></div>
+                  <div id="regex-test-output" class="mt-1 small text-info" aria-live="polite"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <%# ── Sources ── %>
+          <hr>
+          <div class="sources-section">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0"><%= t('plugins.aeon_mapping.form.sources') %></h6>
+              <button type="button" id="add-source-btn" class="btn btn-sm btn-outline-secondary"
+                      aria-label="<%= t('plugins.aeon_mapping.actions.add_source') %>">
+                + <%= t('plugins.aeon_mapping.actions.add_source') %>
+              </button>
+            </div>
+            <div id="sources-list" aria-label="<%= t('plugins.aeon_mapping.form.sources') %>">
+              <%# Populated by JS %>
+            </div>
+          </div>
+
+        </div><%# /modal-body %>
+
+        <div class="modal-footer">
+          <div id="rule-form-errors" class="text-danger flex-fill text-left d-none" role="alert"
+               aria-live="assertive"></div>
+          <button type="button" class="btn btn-secondary" id="rule-modal-cancel"
+                  data-dismiss="modal">
+            <%= t('plugins.aeon_mapping.actions.cancel') %>
+          </button>
+          <button type="submit" class="btn btn-primary" id="rule-form-submit">
+            <%= t('plugins.aeon_mapping.actions.save') %>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<%# ── Source row template (hidden, cloned by JS) ── %>
+<template id="source-row-template">
+  <div class="source-row card card-body py-2 mb-2" data-source-index="__IDX__">
+    <div class="d-flex align-items-start">
+      <div class="flex-fill">
+        <div class="form-group mb-1">
+          <label class="sr-only">
+            <%= t('plugins.aeon_mapping.form.source_type') %> __IDX_HUMAN__
+          </label>
+          <div class="btn-group btn-group-toggle source-type-toggle" data-toggle="buttons"
+               role="radiogroup"
+               aria-label="<%= t('plugins.aeon_mapping.form.source_type') %>">
+            <label class="btn btn-sm btn-outline-secondary active">
+              <input type="radio" name="source_types[]" value="predefined" checked
+                     aria-label="<%= t('plugins.aeon_mapping.source_types.predefined') %>">
+              <%= t('plugins.aeon_mapping.source_types.predefined') %>
+            </label>
+            <label class="btn btn-sm btn-outline-secondary">
+              <input type="radio" name="source_types[]" value="jsonpath"
+                     aria-label="<%= t('plugins.aeon_mapping.source_types.jsonpath') %>">
+              <%= t('plugins.aeon_mapping.source_types.jsonpath') %>
+            </label>
+          </div>
+        </div>
+
+        <%# Predefined extractor picker %>
+        <div class="source-predefined-input">
+          <%= render :partial => 'aeon_mapping/extractor_picker',
+                     :locals => { :index => '__IDX__', :record_type => record_type } %>
+        </div>
+
+        <%# JSONPath input %>
+        <div class="source-jsonpath-input d-none">
+          <%= render :partial => 'aeon_mapping/jsonpath_input',
+                     :locals => { :index => '__IDX__' } %>
+        </div>
+
+        <%# Placeholder name (shown when transformation_type == template) %>
+        <div class="source-placeholder-group d-none">
+          <div class="form-group mb-1">
+            <label class="small" for="placeholder-__IDX__">
+              <%= t('plugins.aeon_mapping.form.placeholder_name') %>
+            </label>
+            <input type="text" class="form-control form-control-sm" id="placeholder-__IDX__"
+                   name="placeholders[]"
+                   placeholder="{...}"
+                   aria-describedby="placeholder-help-__IDX__">
+            <small id="placeholder-help-__IDX__" class="form-text text-muted">
+              <%= t('plugins.aeon_mapping.form.placeholder_name_help') %>
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-sm btn-outline-danger ml-2 remove-source-btn"
+              aria-label="<%= t('plugins.aeon_mapping.actions.remove_source') %>">
+        &times;
+      </button>
+    </div>
+  </div>
+</template>

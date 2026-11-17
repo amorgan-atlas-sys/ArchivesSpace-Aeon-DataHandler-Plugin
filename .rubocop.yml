@@ -1,0 +1,132 @@
+AllCops:
+  TargetRubyVersion: 2.6
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'vendor/**/*'
+    - 'Legacy/**/*'
+    # The AS endpoint DSL uses a non-standard chained block form that confuses
+    # the parser. These files are valid Ruby in the AS runtime context.
+    - 'backend/controllers/**/*'
+
+# Frozen string literal is desirable but not required for an AS plugin
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+# ArchivesSpace plugin code uses many long methods for field extraction
+Metrics/MethodLength:
+  Max: 80
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/AbcSize:
+  Max: 65
+
+Metrics/CyclomaticComplexity:
+  Max: 30
+
+Metrics/PerceivedComplexity:
+  Max: 30
+
+Metrics/BlockLength:
+  Max: 100
+  Exclude:
+    - 'spec/**/*'
+    - 'migrations/**/*'
+
+# Spec files use many long example groups
+Metrics/ModuleLength:
+  Max: 500
+  Exclude:
+    - 'spec/**/*'
+    - 'backend/model/aeon_predefined_extractors.rb'
+
+Metrics/ClassLength:
+  Max: 500
+
+# Double-quoted strings are fine in Ruby
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# Documentation comments not required for private plugin classes
+Style/Documentation:
+  Enabled: false
+
+# Rescue without class is common in AS plugin code for robustness
+Style/RescueStandardError:
+  Enabled: false
+
+# Guard clause formatting preference — not critical
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+# Hash alignment is subjective — allow natural grouping
+Layout/HashAlignment:
+  Enabled: false
+
+# ArchivesSpace uses old hash rocket style in some DSL methods
+Style/HashSyntax:
+  EnforcedStyle: ruby19_no_mixed_keys
+  Exclude:
+    - 'backend/controllers/**/*'
+
+# sort_by...last pattern is intentional for clarity
+Style/RedundantSort:
+  Enabled: false
+
+# Multiline method chaining style for AS DSL
+Layout/MultilineMethodCallIndentation:
+  Enabled: false
+
+# Mutable constants are used for configuration hashes
+Style/MutableConstant:
+  Enabled: false
+
+# has_key? is used in AppConfig pattern across all AS plugins
+Style/PreferredHashMethods:
+  Enabled: false
+
+# Numeric predicate style — .zero? vs == 0 — prefer explicit
+Style/NumericPredicate:
+  Enabled: false
+
+# Safe navigation preference
+Style/SafeNavigation:
+  Enabled: false
+
+# Redundant begin in rescue blocks is fine for clarity
+Style/RedundantBegin:
+  Enabled: false
+
+# if/unless modifier style — full form is clearer in some contexts
+Style/IfUnlessModifier:
+  Enabled: false
+
+# Empty lines around class body in AS controller DSL
+Layout/EmptyLinesAroundClassBody:
+  Enabled: false
+
+# Hash as last array item is intentional in some AS DSL calls
+Style/HashAsLastArrayItem:
+  Enabled: false
+
+# Class variables (@@) are intentional for shared cache/mutex state in the
+# mapping engine and for stub stores in test helpers.
+Style/ClassVars:
+  Enabled: false
+
+# Line length: allow slightly longer lines for log messages and conditionals
+Layout/LineLength:
+  Max: 220
+
+# Block nesting: the ancestor restriction cascade is inherently nested
+Metrics/BlockNesting:
+  Max: 5
+
+# MissingSuper in stub: Sequel::Model.inherited stub intentionally does nothing
+Lint/MissingSuper:
+  Exclude:
+    - 'spec/**/*'

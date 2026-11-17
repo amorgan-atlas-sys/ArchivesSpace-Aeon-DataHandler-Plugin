@@ -1,0 +1,34 @@
+<%# locals: index (String or Integer), record_type (String) %>
+<%# Renders a searchable dropdown for predefined extractors.
+    Source values are populated via JavaScript (fetch /plugins/aeon_mapping/rules/predefined_extractors). %>
+
+<div class="extractor-picker" data-record-type="<%= record_type %>">
+  <div class="form-group mb-1">
+    <label class="sr-only" for="extractor-search-<%= index %>">
+      <%= t('plugins.aeon_mapping.form.source_value_predefined') %>
+    </label>
+    <input type="text"
+           class="form-control form-control-sm extractor-search-input"
+           id="extractor-search-<%= index %>"
+           placeholder="<%= t('plugins.aeon_mapping.form.search_extractors') %>"
+           autocomplete="off"
+           aria-autocomplete="list"
+           aria-controls="extractor-list-<%= index %>"
+           aria-expanded="false"
+           role="combobox">
+    <input type="hidden"
+           class="extractor-value-input"
+           name="source_values[]"
+           value="">
+    <ul class="extractor-dropdown list-group"
+        id="extractor-list-<%= index %>"
+        role="listbox"
+        aria-label="<%= t('plugins.aeon_mapping.form.source_value_predefined') %>"
+        style="display:none; max-height:200px; overflow-y:auto; position:absolute; z-index:1050; width:100%;">
+      <%# Populated by JavaScript %>
+    </ul>
+    <div class="extractor-no-results small text-muted d-none">
+      <%= t('plugins.aeon_mapping.form.no_extractors_found') %>
+    </div>
+  </div>
+</div>

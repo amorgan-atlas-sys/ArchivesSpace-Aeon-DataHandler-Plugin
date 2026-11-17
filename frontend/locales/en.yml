@@ -1,0 +1,286 @@
+en:
+  plugins:
+    aeon_mapping:
+      title: Aeon Mapping Rules
+      label: Aeon Mapping
+      nav_label: Aeon Mapping
+      description: >
+        Configure how ArchivesSpace record fields are mapped to Aeon field names.
+        Changes take effect immediately (cache is refreshed on save).
+        Each application's default rules apply to all of its repositories
+        unless a repository overrides them.
+
+      # -----------------------------------------------------------------------
+      # Record types
+      # -----------------------------------------------------------------------
+      record_types:
+        archival_object: Archival Object
+        resource: Resource
+        accession: Accession
+        instance: Instance / Container
+        digital_object: Digital Object
+
+      # -----------------------------------------------------------------------
+      # Transformation types
+      # -----------------------------------------------------------------------
+      transformation_types:
+        simple: "Single value"
+        concat: "Combine multiple values"
+        conditional: "First available value"
+        template: "Filled-in template"
+        extract: "Pattern extraction (regex)"
+
+      transformation_type_help:
+        simple: "Pull one value from one source. Use this for ordinary one-to-one mappings. For example, the ArchivesSpace 'title' goes straight into the Aeon ItemTitle field."
+        concat: "Join values from one or more sources into a single string, separated by your chosen delimiter. Example: combine 'top_container_indicator' and 'sub_container_indicator_2' as 'Box 5, Folder 12'."
+        conditional: "Try multiple sources in order and use the first one that has a value. Useful when a field might come from different places. Example: try 'preferred_citation' first, fall back to the record title if that's empty."
+        template: "Build the value from a fill-in-the-blank template. Each source row gets a placeholder name, which you reference in the template like {placeholder_name}. Example template: 'Box {box}, Folder {folder}' with sources named 'box' and 'folder' produces 'Box 5, Folder 12'."
+        extract: "Apply a regular expression to a source value and capture part of it. Example: extract the year '1942' from the date expression '1942-1955' using the pattern '(\\d{4})'. The first capture group is returned; if your pattern has no group, the whole match is used."
+
+      # -----------------------------------------------------------------------
+      # Source types
+      # -----------------------------------------------------------------------
+      source_types:
+        predefined: Predefined Extractor
+        jsonpath: JSONPath Expression
+
+      source_type_help:
+        predefined: "Select from a curated list of named extractors. Each extractor knows how to pull a specific value from the record."
+        jsonpath: "Enter a JSONPath expression (e.g. $.title or $.linked_agents[0]._resolved.names[0].sort_name) to extract any value from the raw record JSON."
+
+      # -----------------------------------------------------------------------
+      # Table headings
+      # -----------------------------------------------------------------------
+      table:
+        aeon_field: Aeon Field
+        transformation: Transformation
+        sources: Sources
+        enabled: Enabled
+        origin: Origin
+        actions: Actions
+        no_rules: "No rules map this record type yet. Click Add Rule to create the first one."
+
+      # -----------------------------------------------------------------------
+      # Origins
+      # -----------------------------------------------------------------------
+      origin:
+        global: Application default
+        repo: Repo override
+        repo_only: Repo only
+        global_static: Default
+
+      # -----------------------------------------------------------------------
+      # Actions
+      # -----------------------------------------------------------------------
+      actions:
+        add_rule: Add Rule
+        edit: Edit
+        delete: Delete
+        reset: Reset to default
+        save: Save
+        cancel: Cancel
+        load_record: Load Record
+        export: Export Rules
+        import: Import Rules
+        export_scoped: "Export %{record_type} Rules"
+        import_scoped: "Import %{record_type} Rules"
+        export_global: "Export Default Rules"
+        import_global: "Import Default Rules"
+        scope_global_option: "All repositories (default)"
+        import_submit: Import
+        move_up: Move up
+        move_down: Move down
+        confirm_delete: "Are you sure you want to delete this rule? This cannot be undone."
+        confirm_reset: "Are you sure you want to reset this rule to the application default? Your repository override will be lost."
+        add_source: Add Source
+        remove_source: Remove source
+        test_regex: Test pattern
+        copy_path: Copy JSONPath
+        show_extracted: Show Extracted Values
+        hide_extracted: Hide Extracted Values
+        refresh_preview: Refresh Preview
+
+      # -----------------------------------------------------------------------
+      # Scope banners
+      # -----------------------------------------------------------------------
+      scope_banner:
+        global: "Editing the defaults for %{consumer}. They apply to every repository that has not overridden the field."
+        repo: "Editing %{repo} overrides for %{consumer}. The application defaults are untouched. Only this repository is affected."
+
+      # -----------------------------------------------------------------------
+      # Consumers (applications) — independent mapping partitions
+      # -----------------------------------------------------------------------
+      consumers:
+        add: Add Application
+        rename: Rename
+        delete: Delete Application
+        modal_add_title: Add Application
+        modal_rename_title: Rename Application
+        key_label: Key
+        key_help: "Machine key that the application passes in the API's consumer parameter. Lowercase letters, digits, hyphens, and underscores only. The key cannot change after creation."
+        label_label: Display Name
+        protected_note: "This application ships with the plugin. Its rules and display name are editable, but it cannot be deleted and its key cannot change."
+
+      # -----------------------------------------------------------------------
+      # Form labels and help text
+      # -----------------------------------------------------------------------
+      form:
+        aeon_field_name: Aeon Field Name
+        aeon_field_name_placeholder: "Start typing, for example ItemTitle"
+        aeon_field_name_help: "The Aeon transaction field that will receive this value. Type to filter the suggestions. To write to an Aeon custom field, enter CustomFields.[ShortName], where ShortName is the field's short name from the Aeon Customization Manager. Example: CustomFields.TopContainerURI. Rules named [Aeon custom field placeholder]_NN ship disabled. To use one, create the custom field in Aeon. Then, under All repositories (default), replace the placeholder with CustomFields.[ShortName] and enable the rule."
+        transformation_type: Transformation Type
+        enabled: Enabled
+        enabled_help: "Uncheck to disable this rule without deleting it. Disabled rules are excluded from the API response."
+        max_length: Max Length
+        max_length_help: "Truncate the mapped value to this many characters. A shortened value ends in an ellipsis (...). Aeon fails to set over-long values rather than truncating them. Left blank, stock Aeon fields (for example ItemTitle, ItemDate) and CustomFields targets fall back to their known column lengths automatically. Other targets get no limit."
+        sort_order: Sort Order
+        delimiter: Delimiter
+        delimiter_help: "Characters used to join multiple values (default: \"; \")."
+        delimiter_placeholder: "; "
+        template: Template String
+        template_help: "Use {placeholder_name} tokens that correspond to the placeholder names you define on each source row below."
+        template_placeholder: "e.g. {level}: {title}"
+        pattern: Regex Pattern
+        pattern_help: "A Ruby-compatible regular expression. The first capture group ( ) is returned, or the full match if there are no groups."
+        pattern_placeholder: "e.g. Box (\\d+)"
+        sources: Sources
+        source_type: Source Type
+        source_value_predefined: Predefined Extractor
+        source_value_jsonpath: JSONPath Expression
+        source_value_jsonpath_placeholder: "$.field_name"
+        placeholder_name: Placeholder Name
+        placeholder_name_help: "Token name used in the template string (without braces). Required for template transformation."
+        search_extractors: Search extractors...
+        no_extractors_found: No extractors found.
+        import_file: Import File (JSON)
+        import_json: Or paste JSON
+        import_strategy: Import Strategy
+        import_strategy_merge: Merge (add/update, keep existing)
+        import_strategy_replace: "Replace (delete this repository's %{record_type} rules first)"
+        import_strategy_replace_global: "Replace (delete default %{record_type} rules first)"
+        import_scope_note: "This imports only %{record_type} rules. Any rules in the file for other record types are ignored. To import other types, switch to that tab and import there."
+
+      # -----------------------------------------------------------------------
+      # Preview panel
+      # -----------------------------------------------------------------------
+      preview:
+        title: Live Preview
+        record_uri_label: Record URI
+        record_uri_placeholder: "/repositories/2/archival_objects/1"
+        record_uri_help: "Enter an ArchivesSpace record URI and click Load, or use Browse to pick one."
+        load_button: Load
+        browse_button: Browse for a record
+        tab_trace: Mapping Trace
+        tab_raw_json: Raw Record JSON
+        trace_help: "For each rule: the sources it pulled from, the values they produced, and the final Aeon output."
+        raw_json_title: Raw Record JSON
+        raw_json_help: "Click any value to copy the JSONPath expression that selects it."
+        col_aeon_field: Aeon Field
+        col_sources: Sources & Extracted Values
+        col_final: Final Output
+        unused_extractors_summary: "Show the extractor values that no rule uses for this record"
+        empty_state_heading: No record loaded yet.
+        empty_state_help_html: "Type a record URI above (e.g. %{sample_uri}) or click Browse to pick one, then click Load."
+        no_record: No record loaded. Enter a record URI above and click Load.
+        loading: Loading preview...
+        updated: Preview updated.
+        truncated_notice: "Raw JSON truncated (record > 100 KB). Mapping still uses full data."
+        empty_output: "(no values mapped)"
+        empty_value: "(empty)"
+        no_match_value: "(no match)"
+        jsonpath_copied: JSONPath copied to clipboard.
+        jsonpath_copy_failed_html: "Could not copy automatically. Path: "
+        browse_modal_title: Pick a record
+        browse_modal_help: "Search ArchivesSpace for a record, then click Use this record to load it into the preview."
+        browse_modal_search_placeholder: "Search by title, identifier, or component ID"
+        browse_modal_no_results: "No records found. Try a different search."
+        browse_modal_searching: Searching...
+        browse_use_record: Use this record
+        browse_cancel: Cancel
+
+      # -----------------------------------------------------------------------
+      # Options summary (compact display in table)
+      # -----------------------------------------------------------------------
+      options_summary:
+        concat: "joined by \"%{delimiter}\""
+        template: "template: \"%{template}\""
+        extract: "pattern: /%{pattern}/"
+
+      # -----------------------------------------------------------------------
+      # Messages
+      # -----------------------------------------------------------------------
+      messages:
+        no_consumers: "No mapping applications exist. Run the plugin's database migrations (setup-database.sh) to seed them."
+        unknown_consumer: "Unknown application key \"%{key}\". Showing \"%{label}\" instead."
+        load_error: "Error loading rules: %{message}"
+        rule_created: Rule created successfully. Cache refreshed.
+        rule_updated: Rule updated successfully. Cache refreshed.
+        rule_deleted: "Rule deleted: %{field}."
+        rule_reset: "Rule reset to the application default: %{field}."
+        save_error: "Error saving rule: %{message}"
+        delete_error: "Error deleting rule: %{message}"
+        reset_error: "Error resetting rule: %{message}"
+        export_error: "Error exporting rules: %{message}"
+        import_success: "Import complete: %{created} created, %{updated} updated, %{skipped} skipped."
+        import_partial: "%{count} rule(s) had errors and were skipped. Check the details above."
+        import_off_type: "%{count} rule(s) for other record types were ignored. This import only applies %{record_type} rules."
+        import_error: "Error importing rules: %{message}"
+        unsaved_changes: "You have unsaved changes. Are you sure you want to leave?"
+        validation_jsonpath_invalid: "Invalid JSONPath expression."
+        validation_regex_invalid: "Invalid regular expression."
+        lock_conflict: "Another user modified this rule. Please reload and try again."
+
+      # -----------------------------------------------------------------------
+      # Page-script strings. aeon_mapping.js reads these through data
+      # attributes the page renders (see aeon_mapping_js_i18n_attributes in
+      # the helper). Key names match the getI18n() calls exactly. Keep the
+      # JS fallback strings in sync when editing.
+      # -----------------------------------------------------------------------
+      js:
+        rule_created_toast: "Rule created"
+        rule_updated_toast: "Rule updated"
+        reorder_default_locked: "Rules from the application defaults keep the defaults' order here. Repository rules reorder below them."
+        consumer_confirm_delete: 'Delete "%{label}" and all of its %{count} mapping rules? This cannot be undone.'
+        add_rule: "Add Rule"
+        edit: "Edit"
+        aeon_field_locked: "Overrides keep the default's Aeon field. To map a different field, add a new rule."
+        unsaved_changes: "You have unsaved changes. Leave?"
+        validation_jsonpath_invalid: "Invalid JSONPath expression."
+        save_failed: "Save failed."
+        confirm_default_rename: 'Renaming this application default un-pairs any repository overrides of "%{field}". Those overrides keep mapping the old field as separate repo-only rules, and the renamed default also applies to those repositories. Continue?'
+        confirm_override_default: "An application default already maps this Aeon field. Your new rule will replace it for this repository. Continue?"
+        preview_browse_modal_title: "Pick a record"
+        preview_browse_modal_help: "Search ArchivesSpace for a record, then click Use this record to load it into the preview."
+        preview_browse_modal_search_placeholder: "Search by title, identifier, or component ID"
+        preview_browse_cancel: "Cancel"
+        preview_browse_modal_searching: "Searching..."
+        preview_browse_modal_no_results: "No records found. Try a different search."
+        preview_browse_use_record: "Use this record"
+        preview_updated: "Preview updated."
+        preview_empty_value: "(empty)"
+        preview_rule_excluded_empty: "Rule excluded (empty result)"
+        empty_output: "(no values mapped)"
+        copy_path: "Copy JSONPath"
+        jsonpath_copied: "JSONPath copied to clipboard."
+        preview_jsonpath_copy_failed_html: "Could not copy automatically. Path: "
+
+      # -----------------------------------------------------------------------
+      # Sections
+      # -----------------------------------------------------------------------
+      sections:
+        consumer_selector: Application
+        repo_selector: Repository
+        record_type_tabs: Record Type
+        rules_list: Mapping Rules
+        preview: Live Preview
+
+      # -----------------------------------------------------------------------
+      # Help / info
+      # -----------------------------------------------------------------------
+      help:
+        what_is_jsonpath: "What is JSONPath?"
+        jsonpath_explainer: "JSONPath is a query language for JSON. Use it to select any field from the raw record. Examples: $.title extracts the top-level 'title' field; $.linked_agents[0]._resolved.names[0].sort_name extracts the sort name of the first linked agent."
+        migration_link: "Migrating from AppConfig field_overrides? See MIGRATION.md."
+        global_rule_note: "This is an application default rule. Saving creates a repository-specific override. The default itself is unchanged. The Aeon field name is locked. To retarget this mapping for this repository only: add a new rule with the new Aeon field, then switch this rule off here. The switch-off becomes a repository override, and the default stays enabled for other repositories."
+        repo_rule_note: "This is a repository-specific override. Click Reset to revert to the application default."
+        global_scope_note: "You are editing the application defaults (All repositories). Rules you add or edit here apply to every repository unless overridden at the repository level."

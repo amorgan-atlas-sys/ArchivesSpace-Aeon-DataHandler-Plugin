@@ -1,0 +1,14 @@
+<%# Loaded into <head> on every staff page. We only emit the stylesheet/script
+    tags on the Aeon Mapping page itself to avoid loading our assets globally.
+    The controller name is exposed by ApplicationController; check for it.
+
+    A query-string cache-buster keyed off file mtime ensures browsers reload
+    the assets after a deploy. Without it, AS sets long-lived cache headers
+    and edits to plugin JS/CSS go unnoticed until users hard-reload. %>
+<% if defined?(controller) && controller.is_a?(AeonMappingController) %>
+  <% aeon_assets_root = File.expand_path('../../assets', File.dirname(__FILE__)) %>
+  <% aeon_css_mtime = File.exist?(File.join(aeon_assets_root, 'stylesheets', 'aeon_mapping.css')) ? File.mtime(File.join(aeon_assets_root, 'stylesheets', 'aeon_mapping.css')).to_i : Time.now.to_i %>
+  <% aeon_js_mtime  = File.exist?(File.join(aeon_assets_root, 'javascripts', 'aeon_mapping.js'))  ? File.mtime(File.join(aeon_assets_root, 'javascripts', 'aeon_mapping.js')).to_i  : Time.now.to_i %>
+  <%= stylesheet_link_tag "/assets/stylesheets/aeon_mapping.css?v=#{aeon_css_mtime}" %>
+  <%= javascript_include_tag "/assets/javascripts/aeon_mapping.js?v=#{aeon_js_mtime}" %>
+<% end %>

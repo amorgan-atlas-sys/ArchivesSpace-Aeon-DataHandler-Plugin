@@ -1,0 +1,44 @@
+<%# Add / rename modal for mapping consumers. JS (aeon_mapping.js) opens it
+    in one of two modes: "add" (key + label editable) or "rename" (key locked —
+    addons reference it in the API's consumer parameter). %>
+<div class="modal fade" id="consumer-modal" tabindex="-1" role="dialog"
+     aria-labelledby="consumer-modal-title" aria-modal="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="consumer-form">
+        <div class="modal-header">
+          <h5 class="modal-title" id="consumer-modal-title"
+              data-add-title="<%= t('plugins.aeon_mapping.consumers.modal_add_title') %>"
+              data-rename-title="<%= t('plugins.aeon_mapping.consumers.modal_rename_title') %>">
+            <%= t('plugins.aeon_mapping.consumers.modal_add_title') %>
+          </h5>
+          <button type="button" class="close" data-dismiss="modal"
+                  aria-label="<%= t('plugins.aeon_mapping.actions.cancel') %>">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="consumer-form-errors" class="alert alert-danger d-none" role="alert"></div>
+          <div class="form-group">
+            <label for="consumer-key"><%= t('plugins.aeon_mapping.consumers.key_label') %></label>
+            <input type="text" class="form-control" id="consumer-key" name="key"
+                   pattern="[a-z0-9][a-z0-9_-]*" maxlength="100" autocomplete="off">
+            <small class="form-text text-muted"><%= t('plugins.aeon_mapping.consumers.key_help') %></small>
+          </div>
+          <div class="form-group">
+            <label for="consumer-label"><%= t('plugins.aeon_mapping.consumers.label_label') %></label>
+            <input type="text" class="form-control" id="consumer-label" name="label" maxlength="255" autocomplete="off">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <%= t('plugins.aeon_mapping.actions.cancel') %>
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <%= t('plugins.aeon_mapping.actions.save') %>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,27 @@
+<%# locals: index (String or Integer) %>
+<%# Renders a JSONPath text input with debounced live validation and value preview. %>
+
+<div class="jsonpath-input-wrapper">
+  <div class="form-group mb-1">
+    <label class="sr-only" for="jsonpath-input-<%= index %>">
+      <%= t('plugins.aeon_mapping.form.source_value_jsonpath') %>
+    </label>
+    <input type="text"
+           class="form-control form-control-sm jsonpath-input"
+           id="jsonpath-input-<%= index %>"
+           name="source_values[]"
+           placeholder="<%= t('plugins.aeon_mapping.form.source_value_jsonpath_placeholder') %>"
+           aria-describedby="jsonpath-validation-<%= index %> jsonpath-result-<%= index %>"
+           autocomplete="off"
+           spellcheck="false">
+    <div id="jsonpath-validation-<%= index %>"
+         class="jsonpath-validation-msg invalid-feedback"
+         role="alert"
+         aria-live="polite">
+    </div>
+    <div id="jsonpath-result-<%= index %>"
+         class="jsonpath-result-preview small text-info mt-1"
+         aria-live="polite">
+    </div>
+  </div>
+</div>
